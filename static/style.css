@@ -69,19 +69,6 @@ ul ul ul {
     list-style-type: square;
 }
 
-/* Typography: Heading Anchors */
-.anchor-link {
-    font-size: 0.5em;
-    text-decoration: none;
-    margin-left: 0.3em;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-:is(h2, h3):is(:hover, :active, :focus-within) .anchor-link {
-    opacity: 1;
-}
-
 /* Links */
 a {
     color: var(--link);
@@ -89,6 +76,36 @@ a {
 
 a:visited {
     color: var(--link-visited);
+}
+
+/* Typography: Heading Anchors */
+.anchor-link {
+    text-decoration: none;
+    color: var(--text);
+    opacity: 0;
+    margin-left: 0.3em;
+    font-size: 0.8em;
+    transition: opacity 0.2s ease-in-out;
+
+    /* Prevent top clipping */
+    position: relative;
+    top: -0.1em;
+}
+
+/* PC: Show on Hover */
+h2:hover .anchor-link,
+h3:hover .anchor-link {
+    opacity: 0.5;
+}
+
+/* Mobile: Show on Toggle (via JS class) */
+.anchor-link.visible {
+    opacity: 0.5;
+}
+
+.anchor-link:hover {
+    opacity: 1 !important;
+    /* Full opacity when hovering the link itself */
 }
 
 /* Content Blocks */
