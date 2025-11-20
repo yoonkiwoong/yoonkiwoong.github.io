@@ -1,0 +1,16 @@
+# System
+.DS_Store
+
+# Editor
+.vscode/
+.antigravity/
+.gemini/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv
+
+# Project
+public/

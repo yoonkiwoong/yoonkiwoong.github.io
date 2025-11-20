@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"
+        media="(prefers-color-scheme: light)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+        media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <header>
+        <nav class="site-nav">
+            <div>
+                <ul>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="/archive/">Archive</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <hr>
+
+    <main>
+        {content}
+    </main>
+
+    <hr>
+
+    <footer class="footer">
+        <p><small>© YOONKIWOONG</small></p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+
+</html>
