@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('h2[id], h3[id]').forEach(heading => {
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('h2[id], h3[id]').forEach(function (heading) {
         const link = document.createElement('a');
         link.href = `#${heading.id}`;
         link.textContent = '🔗';
