@@ -71,7 +71,9 @@ def generate_pages():
 
         page_html = render_template("layout.html", {
             "title": f"{page_file.stem.title()} | YOONKIWOONG",
-            "content": convert_markdown_to_html(read_file(page_file))
+            "content": convert_markdown_to_html(read_file(page_file)),
+            "url": f"https://yoonkiwoong.github.io/{page_file.stem}/",
+            "canonical_url": f"https://yoonkiwoong.github.io/{page_file.stem}/"
         })
         write_file(PUBLIC_DIRECTORY / page_file.stem / "index.html", page_html)
 
@@ -104,11 +106,11 @@ def generate_posts(posts):
         next_title = ''
         
         if previous_post:
-            previous_link = f'<a href="../../{previous_post["url"]}" rel="prev">← Previous</a>'
+            previous_link = f'<a href="/{previous_post["url"]}" rel="prev">← Previous</a>'
             previous_title = previous_post["title"]
         
         if next_post:
-            next_link = f'<a href="../../{next_post["url"]}" rel="next">Next →</a>'
+            next_link = f'<a href="/{next_post["url"]}" rel="next">Next →</a>'
             next_title = next_post["title"]
         
         post_navigation += f'<div>{previous_link}</div>'
@@ -132,7 +134,9 @@ def generate_posts(posts):
 
         post_html = render_template("layout.html", {
             "title": f"{post['title']} | YOONKIWOONG",
-            "content": post_content
+            "content": post_content,
+            "url": f"https://yoonkiwoong.github.io/{post['url']}",
+            "canonical_url": f"https://yoonkiwoong.github.io/{post['url']}"
         })
 
         post_directory = PUBLIC_DIRECTORY / post["url"]
@@ -140,6 +144,59 @@ def generate_posts(posts):
 
         for image_file in post["path"].parent.glob("*.[jp][pn]g"):
             shutil.copy(image_file, post_directory)
+
+
+def generate_index(posts):
+    if not posts:
+        return
+
+    latest_post = posts[0]
+    
+    previous_post = posts[1] if len(posts) > 1 else None
+    
+    post_navigation = '<nav class="post-nav" aria-label="Post navigation">'
+    
+    previous_link = ''
+    previous_title = ''
+    next_link = ''
+    next_title = ''
+    
+    if previous_post:
+        previous_link = f'<a href="/{previous_post["url"]}" rel="prev">← Previous</a>'
+        previous_title = previous_post["title"]
+    
+    post_navigation += f'<div>{previous_link}</div>'
+    post_navigation += f'<div>{next_link}</div>'
+    post_navigation += f'<div>{previous_title}</div>'
+    post_navigation += f'<div>{next_title}</div>'
+    post_navigation += '</nav>'
+
+    post_body = convert_markdown_to_html(read_file(latest_post["path"]))
+
+    post_data = {
+        "{title}": latest_post["title"],
+        "{content}": post_body,
+        "{date}": latest_post["date"],
+        "{post_nav}": post_navigation
+    }
+
+    post_template = read_file(TEMPLATE_DIRECTORY / "post.html")
+    post_content = post_template
+    for placeholder, value in post_data.items():
+        post_content = post_content.replace(placeholder, value)
+
+    index_html = render_template("layout.html", {
+        "title": f"{latest_post['title']} | YOONKIWOONG",
+        "content": post_content,
+        "description": latest_post.get("description") or f"Post from {latest_post['date']}",
+        "url": "https://yoonkiwoong.github.io/",
+        "canonical_url": f"https://yoonkiwoong.github.io/{latest_post['url']}"
+    })
+
+    write_file(PUBLIC_DIRECTORY / "index.html", index_html)
+
+    for image_file in latest_post["path"].parent.glob("*.[jp][pn]g"):
+        shutil.copy(image_file, PUBLIC_DIRECTORY)
 
 
 def generate_archive(posts):
@@ -153,7 +210,9 @@ def generate_archive(posts):
 
     archive_html = render_template("layout.html", {
         "title": "Archive | YOONKIWOONG",
-        "content": archive_content
+        "content": archive_content,
+        "url": "https://yoonkiwoong.github.io/archive/",
+        "canonical_url": "https://yoonkiwoong.github.io/archive/"
     })
     write_file(PUBLIC_DIRECTORY / "archive" / "index.html", archive_html)
 
@@ -167,6 +226,7 @@ def main():
     posts = collect_posts()
 
     generate_posts(posts)
+    generate_index(posts)
     generate_archive(posts)
 
     print("Build Complete")
