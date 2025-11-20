@@ -48,7 +48,7 @@ def generate_url_slug(text):
 def add_anchor_to_heading(match):
     tag, text = match.groups()
     slug = generate_url_slug(text)
-    return f'<{tag} id="{slug}"><a href="#{slug}">{text}</a></{tag}>'
+    return f'<{tag} id="{slug}">{text}</{tag}>'
 
 
 def convert_markdown_to_html(raw_text):
