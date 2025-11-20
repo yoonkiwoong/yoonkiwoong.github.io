@@ -48,8 +48,7 @@ def generate_url_slug(text):
 def add_anchor_to_heading(match):
     tag, text = match.groups()
     slug = generate_url_slug(text)
-    anchor = f'<a href="#{slug}" class="anchor-link" aria-label="Link to section: {text}">🔗</a>'
-    return f'<{tag} id="{slug}">{text} {anchor}</{tag}>'
+    return f'<{tag} id="{slug}"><a href="#{slug}">{text}</a></{tag}>'
 
 
 def convert_markdown_to_html(raw_text):
