@@ -73,16 +73,20 @@ ul ul ul {
 h2 a,
 h3 a {
     text-decoration: none;
-    font-size: 1rem;
+    font-size: 0.8em;
+    /* 아이콘 크기 살짝 축소 */
+    line-height: 1;
+    /* 잘리는 현상 방지 */
     margin-left: 0.3em;
     opacity: 0;
+    /* 항상 희미하게 보이게 */
     transition: opacity 0.25s;
 }
 
 h2:hover a,
 h3:hover a,
-h2:active a,
-h3:active a {
+h2:focus-within a,
+h3:focus-within a {
     opacity: 1;
 }
 
