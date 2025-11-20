@@ -78,10 +78,7 @@ ul ul ul {
     transition: opacity 0.2s;
 }
 
-h2:hover .anchor-link,
-h3:hover .anchor-link,
-h2:focus-within .anchor-link,
-h3:focus-within .anchor-link {
+:is(h2, h3):is(:hover, :active, :focus-within) .anchor-link {
     opacity: 1;
 }
 
@@ -161,13 +158,11 @@ pre[class*="language-"] code {
     grid-template-rows: auto auto;
 }
 
-.post-nav>div:nth-child(1),
-.post-nav>div:nth-child(3) {
+.post-nav>div:is(:nth-child(1), :nth-child(3)) {
     text-align: left;
 }
 
-.post-nav>div:nth-child(2),
-.post-nav>div:nth-child(4) {
+.post-nav>div:is(:nth-child(2), :nth-child(4)) {
     text-align: right;
 }
 
