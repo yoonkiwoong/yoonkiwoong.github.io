@@ -72,8 +72,13 @@ ul ul ul {
 /* Typography: Heading Links */
 h2 a,
 h3 a {
-    color: inherit;
+    color: var(--text);
     text-decoration: none;
+}
+
+h2 a:visited,
+h3 a:visited {
+    color: var(--text);
 }
 
 /* Links */
