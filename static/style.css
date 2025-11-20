@@ -69,16 +69,18 @@ ul ul ul {
     list-style-type: square;
 }
 
-/* Typography: Heading Links */
-h2 a,
-h3 a {
-    color: var(--text);
+/* Typography: Heading Anchors */
+.anchor-link {
+    font-size: 0.5em;
     text-decoration: none;
+    margin-left: 0.3em;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
-h2 a:visited,
-h3 a:visited {
-    color: var(--text);
+h2:hover .anchor-link,
+h3:hover .anchor-link {
+    opacity: 1;
 }
 
 /* Links */
