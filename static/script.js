@@ -1,24 +1,62 @@
 document.addEventListener('DOMContentLoaded', function () {
     const headings = document.querySelectorAll('h2[id], h3[id]');
+    const canHover = window.matchMedia('(hover: hover)').matches;
 
-    headings.forEach(function (heading) {
-        const anchor = document.createElement('a');
-        anchor.className = 'anchor-link';
-        anchor.href = '#' + heading.id;
-        anchor.textContent = '#';
+    const AnchorManager = {
+        createAnchor: (heading) => {
+            if (heading.querySelector('.anchor-link')) return;
+            const anchor = document.createElement('a');
+            anchor.className = 'anchor-link';
+            anchor.href = '#' + heading.id;
+            anchor.textContent = '🔗';
+            heading.appendChild(anchor);
+        },
+        removeAnchor: (heading) => {
+            const anchor = heading.querySelector('.anchor-link');
+            if (anchor) anchor.remove();
+        },
+        clearAnchors: () => {
+            document.querySelectorAll('.anchor-link').forEach(anchor => anchor.remove());
+        }
+    };
 
-        heading.appendChild(anchor);
+    const HoverInteraction = {
+        init() {
+            headings.forEach(heading => {
+                heading.addEventListener('mouseenter', () => this.onHoverIn(heading));
+                heading.addEventListener('mouseleave', () => this.onHoverOut(heading));
+            });
+        },
+        onHoverIn: (heading) => AnchorManager.createAnchor(heading),
+        onHoverOut: (heading) => AnchorManager.removeAnchor(heading)
+    };
 
-        heading.addEventListener('click', function (e) {
-            if (e.target === anchor) return;
+    const TouchInteraction = {
+        init() {
+            document.addEventListener('click', (touchEvent) => {
+                const heading = touchEvent.target.closest('h2[id], h3[id]');
 
-            anchor.classList.toggle('visible');
+                if (!heading) {
+                    this.onOutsideClick();
+                    return;
+                }
 
-            if (anchor.classList.contains('visible')) {
-                setTimeout(function () {
-                    anchor.classList.remove('visible');
-                }, 2000);
-            }
-        });
-    });
+                const isAnchor = touchEvent.target.classList.contains('anchor-link');
+                if (isAnchor) return;
+
+                this.onHeadingClick(heading);
+            });
+        },
+        onHeadingClick: (heading) => {
+            const exists = heading.querySelector('.anchor-link');
+            AnchorManager.clearAnchors();
+            if (!exists) AnchorManager.createAnchor(heading);
+        },
+        onOutsideClick: () => {
+            AnchorManager.clearAnchors();
+        }
+    };
+
+    const currentInteraction = canHover ? HoverInteraction : TouchInteraction;
+    currentInteraction.init();
 });
