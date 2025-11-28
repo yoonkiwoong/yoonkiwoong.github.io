@@ -80,10 +80,38 @@ a:visited {
 }
 
 /* Typography: Heading Anchors */
+h2,
+h3 {
+    position: relative;
+    width: fit-content;
+    padding-right: 2.5rem;
+}
+
+h2:hover .anchor-link,
+h3:hover .anchor-link,
+.anchor-link:hover {
+    opacity: 1;
+}
+
 .anchor-link {
+    position: absolute;
+    right: 0;
+    width: 2.5rem;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
-    margin-left: 0.2em;
-    font-size: 0.8em;
+    font-size: 1.2rem;
+    border: 0;
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.anchor-link:visited {
+    color: var(--text);
 }
 
 /* Typography: Quotes */
@@ -158,6 +186,30 @@ pre[class*="language-"] code {
 
 .site-nav a {
     text-decoration: none;
+}
+
+.post-meta {
+    margin-top: 0.5rem;
+    color: var(--muted);
+}
+
+.post-meta ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.post-meta li {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.post-meta ion-icon {
+    font-size: 1rem;
 }
 
 .post-nav {
