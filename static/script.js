@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const anchor = document.createElement('a');
             anchor.className = 'anchor-link';
             anchor.href = '#' + heading.id;
-            anchor.textContent = '🔗';
+            anchor.innerHTML = '<ion-icon name="link-outline"></ion-icon>';
             heading.appendChild(anchor);
         },
         removeAnchor: (heading) => {
