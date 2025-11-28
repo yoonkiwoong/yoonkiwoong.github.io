@@ -1,7 +1,9 @@
 import re
 import shutil
+import subprocess
 import markdown
 from pathlib import Path
+from datetime import datetime
 from itertools import groupby
 
 CONTENT_DIRECTORY = Path("content")
@@ -70,7 +72,7 @@ def render_template(template_name, context):
 
 
 # Utility (Content Processing): Render a post to HTML
-def render_post(post, previous_post=None, next_post=None):
+def render_post(post, previous_post=None, next_post=None, published_date=None, updated_date=None):
     post_navigation = '<nav class="post-nav" aria-label="Post navigation">'
     
     previous_link = ''
@@ -88,8 +90,8 @@ def render_post(post, previous_post=None, next_post=None):
     
     post_navigation += f'<div>{previous_link}</div>'
     post_navigation += f'<div>{next_link}</div>'
-    post_navigation += f'<div>{previous_title}</div>'
-    post_navigation += f'<div>{next_title}</div>'
+    post_navigation += f'<div><b>{previous_title}</b></div>'
+    post_navigation += f'<div><b>{next_title}</b></div>'
     post_navigation += '</nav>'
 
     post_body = convert_markdown_to_html(read_file(post["path"]))
@@ -98,6 +100,8 @@ def render_post(post, previous_post=None, next_post=None):
         "{title}": post["title"],
         "{content}": post_body,
         "{date}": post["date"],
+        "{published_date}": published_date or "",
+        "{updated_date}": updated_date or "",
         "{post_nav}": post_navigation
     }
 
@@ -114,14 +118,46 @@ def render_post(post, previous_post=None, next_post=None):
     })
 
 
+# Utility (Git): Get the first commit date of a file (published)
+def get_published_date(file_path):
+    try:
+        published_result = subprocess.run(
+            ['git', 'log', '--follow', '--format=%aI', '--reverse', str(file_path)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        published_date_iso = published_result.stdout.strip().split('\n')[0]
+        published_date = datetime.fromisoformat(published_date_iso).strftime('%Y-%m-%d')
+        return published_date
+    except:
+        return None
+
+
+# Utility (Git): Get the last modified date of a file (updated)
+def get_updated_date(file_path):
+    try:
+        updated_result = subprocess.run(
+            ['git', 'log', '-1', '--format=%aI', str(file_path)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        updated_date_iso = updated_result.stdout.strip()
+        updated_date = datetime.fromisoformat(updated_date_iso).strftime('%Y-%m-%d')
+        return updated_date
+    except:
+        return None
+
+
 # Utility (Date Helpers): Get the date from a post dictionary
 def get_post_date(post):
-    return post["date"]
+    return post["published_date"]
 
 
 # Utility (Date Helpers): Get the year from a post dictionary
 def get_post_year(post):
-    return post["date"][:4]
+    return post["published_date"][:4]
 
 
 def generate_pages():
@@ -147,9 +183,14 @@ def collect_posts():
     posts = []
     for post_file in POSTS_DIRECTORY.rglob("*.md"):
         post_date = post_file.parent.name
+        published_date = get_published_date(post_file)
+        updated_date = get_updated_date(post_file)
+        
         posts.append({
             "title": post_file.stem,
             "date": post_date,
+            "published_date": published_date,
+            "updated_date": updated_date,
             "url": f"post/{post_date}/",
             "path": post_file
         })
@@ -161,7 +202,8 @@ def generate_posts(posts):
         next_post = posts[index - 1] if index > 0 else None
         previous_post = posts[index + 1] if index < len(posts) - 1 else None
 
-        post_html = render_post(post, previous_post, next_post)
+        post_html = render_post(post, previous_post, next_post, 
+                                post["published_date"], post["updated_date"])
 
         post_directory = PUBLIC_DIRECTORY / post["url"]
         write_file(post_directory / "index.html", post_html)
@@ -176,7 +218,9 @@ def generate_index(posts):
     latest_post = posts[0]
     previous_post = posts[1] if len(posts) > 1 else None
 
-    index_html = render_post(latest_post, previous_post=previous_post, next_post=None)
+    index_html = render_post(latest_post, previous_post=previous_post, next_post=None,
+                             published_date=latest_post["published_date"],
+                             updated_date=latest_post["updated_date"])
 
     write_file(PUBLIC_DIRECTORY / "index.html", index_html)
 
@@ -189,7 +233,7 @@ def generate_archive(posts):
     for year, group in groupby(posts, key=get_post_year):
         archive_content += f"<h2>{year}</h2><ul>"
         for post in group:
-            archive_content += f'<li><a href="/{post["url"]}">{post["title"]}</a> | <small>{post["date"]}</small></li>'
+            archive_content += f'<li><a href="/{post["url"]}">{post["title"]}</a> | <small>{post["published_date"]}</small></li>'
         archive_content += "</ul>"
 
     archive_html = render_template("layout.html", {
