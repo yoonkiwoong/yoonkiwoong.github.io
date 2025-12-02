@@ -1,22 +1,20 @@
 <article>
     <header>
         <h1>{title}</h1>
-        <small>
-            <div class="post-meta">
-                <ul>
-                    <li>
-                        <ion-icon name="calendar-clear-outline"></ion-icon>
-                        <span>Published at</span>
-                        <time datetime="{published_date}">{published_date}</time>
-                    </li>
-                    <li>
-                        <ion-icon name="sync-outline"></ion-icon>
-                        <span>Updated at</span>
-                        <time datetime="{updated_date}">{updated_date}</time>
-                    </li>
-                </ul>
-            </div>
-        </small>
+        <div class="post-meta">
+            <ul>
+                <li>
+                    <ion-icon name="calendar-clear-outline"></ion-icon>
+                    <span>Published</span>
+                    <time datetime="{published_date}">{published_date}</time>
+                </li>
+                <li>
+                    <ion-icon name="sync-outline"></ion-icon>
+                    <span>Updated</span>
+                    <time datetime="{updated_date}">{updated_date}</time>
+                </li>
+            </ul>
+        </div>
     </header>
 
     {content}
