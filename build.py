@@ -57,10 +57,12 @@ def add_anchor_to_heading(match):
     return f'<{tag} id="{slug}">{text}</{tag}>'
 
 
-# Utility (Content Processing): Convert Markdown text to HTML with anchors
-def convert_markdown_to_html(raw_text):
+# Utility (Content Processing): Convert Markdown text to HTML with optional anchors
+def convert_markdown_to_html(raw_text, add_anchors=True):
     html = markdown.markdown(raw_text, extensions=['fenced_code'])
-    return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, html)
+    if add_anchors:
+        return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, html)
+    return html
 
 
 # Utility (Content Processing): Render a template with context data
@@ -71,23 +73,44 @@ def render_template(template_name, context):
     return template
 
 
+# Utility (Content Processing): Extract first <p> tag content from HTML
+def extract_first_paragraph(html):
+    match = re.search(r'<p>(.*?)</p>', html, re.DOTALL)
+    if match:
+        # Remove HTML tags from paragraph content
+        text = re.sub(r'<[^>]+>', '', match.group(1))
+        # Replace newlines and multiple spaces with single space
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+    return ""
+
+
+# Utility (Content Processing): Generate OG tags HTML
+def generate_og_tags(title, description, image_url, url):
+    return f'''<meta property="og:title" content="{title}">
+    <meta property="og:description" content="{description}">
+    <meta property="og:image" content="{image_url}">
+    <meta property="og:url" content="{url}">
+    <meta property="og:type" content="website">'''
+
+
 # Utility (Content Processing): Render a post to HTML
 def render_post(post, previous_post=None, next_post=None, published_date=None, updated_date=None):
     post_navigation = '<nav class="post-nav" aria-label="Post navigation">'
-    
+
     previous_link = ''
     previous_title = ''
     next_link = ''
     next_title = ''
-    
+
     if previous_post:
         previous_link = f'<a href="/{previous_post["url"]}" rel="prev">← Previous</a>'
         previous_title = previous_post["title"]
-    
+
     if next_post:
         next_link = f'<a href="/{next_post["url"]}" rel="next">Next →</a>'
         next_title = next_post["title"]
-    
+
     post_navigation += f'<div>{previous_link}</div>'
     post_navigation += f'<div>{next_link}</div>'
     post_navigation += f'<div><b>{previous_title}</b></div>'
@@ -110,10 +133,19 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     for placeholder, value in post_data.items():
         post_content = post_content.replace(placeholder, value)
 
-    return render_template("layout.html", {
+    # Generate OG tags for post
+    description = extract_first_paragraph(post_body) or post["title"]
+    og_tags = generate_og_tags(
+        title=f"{post['title']} | YOONKIWOONG",
+        description=description,
+        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        url=f"https://yoonkiwoong.github.io/{post['url']}"
+    )
+
+    return render_template("common.html", {
         "title": f"{post['title']} | YOONKIWOONG",
         "content": post_content,
-        "url": f"https://yoonkiwoong.github.io/{post['url']}",
+        "og_tags": og_tags,
         "canonical_url": f"https://yoonkiwoong.github.io/{post['url']}"
     })
 
@@ -160,23 +192,32 @@ def get_post_year(post):
     return post["published_date"][:4]
 
 
-def generate_pages():
-    for page_file in CONTENT_DIRECTORY.rglob("*.md"):
-        if POSTS_DIRECTORY in page_file.parents:
-            continue
+def generate_about():
+    about_file = CONTENT_DIRECTORY / "about" / "about.md"
+    if not about_file.exists():
+        return
 
-        page_html = render_template("layout.html", {
-            "title": f"{page_file.stem.title()} | YOONKIWOONG",
-            "content": convert_markdown_to_html(read_file(page_file)),
-            "url": f"https://yoonkiwoong.github.io/{page_file.stem}/",
-            "canonical_url": f"https://yoonkiwoong.github.io/{page_file.stem}/"
-        })
-        output_directory = PUBLIC_DIRECTORY / page_file.stem
-        output_directory.mkdir(parents=True, exist_ok=True)
+    content_html = convert_markdown_to_html(read_file(about_file), add_anchors=False)
+    description = extract_first_paragraph(content_html) or "About YOONKIWOONG"
 
-        copy_assets(page_file.parent, output_directory)
+    og_tags = generate_og_tags(
+        title="About | YOONKIWOONG",
+        description=description,
+        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        url="https://yoonkiwoong.github.io/about/"
+    )
 
-        write_file(output_directory / "index.html", page_html)
+    page_html = render_template("common.html", {
+        "title": "About | YOONKIWOONG",
+        "content": content_html,
+        "og_tags": og_tags,
+        "canonical_url": "https://yoonkiwoong.github.io/about/"
+    })
+
+    output_directory = PUBLIC_DIRECTORY / "about"
+    output_directory.mkdir(parents=True, exist_ok=True)
+    copy_assets(about_file.parent, output_directory)
+    write_file(output_directory / "index.html", page_html)
 
 
 def collect_posts():
@@ -236,10 +277,17 @@ def generate_archive(posts):
             archive_content += f'<li><a href="/{post["url"]}">{post["title"]}</a> | <small>{post["published_date"]}</small></li>'
         archive_content += "</ul>"
 
-    archive_html = render_template("layout.html", {
+    og_tags = generate_og_tags(
+        title="Archive | YOONKIWOONG",
+        description="Archive of all posts by YOONKIWOONG",
+        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        url="https://yoonkiwoong.github.io/archive/"
+    )
+
+    archive_html = render_template("common.html", {
         "title": "Archive | YOONKIWOONG",
         "content": archive_content,
-        "url": "https://yoonkiwoong.github.io/archive/",
+        "og_tags": og_tags,
         "canonical_url": "https://yoonkiwoong.github.io/archive/"
     })
     write_file(PUBLIC_DIRECTORY / "archive" / "index.html", archive_html)
@@ -249,13 +297,16 @@ def main():
     initialize_directory(PUBLIC_DIRECTORY)
     copy_static_files()
 
-    generate_pages()
+    # 1. Build about page
+    generate_about()
 
+    # 2. Build archive page
     posts = collect_posts()
+    generate_archive(posts)
 
+    # 3. Build post pages
     generate_posts(posts)
     generate_index(posts)
-    generate_archive(posts)
 
     print("Build Complete")
 
