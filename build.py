@@ -138,7 +138,7 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     og_tags = generate_og_tags(
         title=f"{post['title']} | YOONKIWOONG",
         description=description,
-        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
         url=f"https://yoonkiwoong.github.io/{post['url']}"
     )
 
@@ -203,7 +203,7 @@ def generate_about():
     og_tags = generate_og_tags(
         title="About | YOONKIWOONG",
         description=description,
-        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
         url="https://yoonkiwoong.github.io/about/"
     )
 
@@ -280,7 +280,7 @@ def generate_archive(posts):
     og_tags = generate_og_tags(
         title="Archive | YOONKIWOONG",
         description="Archive of all posts by YOONKIWOONG",
-        image_url="https://yoonkiwoong.github.io/static/og-image.png",
+        image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
         url="https://yoonkiwoong.github.io/archive/"
     )
 
