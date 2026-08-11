@@ -1,3 +1,4 @@
+import html
 import re
 import shutil
 import subprocess
@@ -11,6 +12,10 @@ POSTS_DIRECTORY = Path("content/posts")
 TEMPLATE_DIRECTORY = Path("templates")
 STATIC_DIRECTORY = Path("static")
 PUBLIC_DIRECTORY = Path("public")
+
+# Language declared per document as `<!-- lang: ko -->`; unmarked documents fall back to SITE_LANGUAGE
+SITE_LANGUAGE = "ko"
+LANGUAGE_PATTERN = re.compile(r'<!--\s*lang:\s*(en|ko)\s*-->\s*')
 
 
 # Utility (File System): Clear and recreate a directory
@@ -59,10 +64,17 @@ def add_anchor_to_heading(match):
 
 # Utility (Content Processing): Convert Markdown text to HTML with optional anchors
 def convert_markdown_to_html(raw_text, add_anchors=True):
-    html = markdown.markdown(raw_text, extensions=['fenced_code'])
+    converted_html = markdown.markdown(raw_text, extensions=['fenced_code'])
     if add_anchors:
-        return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, html)
-    return html
+        return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, converted_html)
+    return converted_html
+
+
+# Utility (Content Processing): Read the declared language and strip its marker
+def extract_language(raw_text):
+    match = LANGUAGE_PATTERN.search(raw_text)
+    language = match.group(1) if match else SITE_LANGUAGE
+    return language, LANGUAGE_PATTERN.sub('', raw_text, count=1)
 
 
 # Utility (Content Processing): Render a template with context data
@@ -74,53 +86,57 @@ def render_template(template_name, context):
 
 
 # Utility (Content Processing): Extract first <p> tag content from HTML
-def extract_first_paragraph(html):
-    match = re.search(r'<p>(.*?)</p>', html, re.DOTALL)
+def extract_first_paragraph(content_html):
+    match = re.search(r'<p>(.*?)</p>', content_html, re.DOTALL)
     if match:
         # Remove HTML tags from paragraph content
         text = re.sub(r'<[^>]+>', '', match.group(1))
+        # Decode entities so the result is plain text, escaped again at the output boundary
+        text = html.unescape(text)
         # Replace newlines and multiple spaces with single space
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
     return ""
 
 
-# Utility (Content Processing): Generate OG tags HTML
-def generate_og_tags(title, description, image_url, url):
-    return f'''<meta property="og:title" content="{title}">
+# Utility (Content Processing): Generate description and OG tags HTML
+def generate_meta_tags(title, description, image_url, url, page_type="website"):
+    title = html.escape(title)
+    description = html.escape(description)
+    return f'''<meta name="description" content="{description}">
+    <meta property="og:title" content="{title}">
     <meta property="og:description" content="{description}">
     <meta property="og:image" content="{image_url}">
     <meta property="og:url" content="{url}">
-    <meta property="og:type" content="website">'''
+    <meta property="og:type" content="{page_type}">'''
 
 
 # Utility (Content Processing): Render a post to HTML
 def render_post(post, previous_post=None, next_post=None, published_date=None, updated_date=None):
     post_navigation = '<nav class="post-nav" aria-label="Post navigation">'
 
-    previous_link = ''
-    previous_title = ''
-    next_link = ''
-    next_title = ''
-
     if previous_post:
-        previous_link = f'<a href="/{previous_post["url"]}" rel="prev">← Previous</a>'
-        previous_title = previous_post["title"]
+        post_navigation += (
+            f'<a class="post-nav-prev" href="/{previous_post["url"]}" rel="prev">'
+            f'<span class="post-nav-label">← Previous</span>'
+            f'<span class="post-nav-title">{html.escape(previous_post["title"])}</span></a>'
+        )
 
     if next_post:
-        next_link = f'<a href="/{next_post["url"]}" rel="next">Next →</a>'
-        next_title = next_post["title"]
+        post_navigation += (
+            f'<a class="post-nav-next" href="/{next_post["url"]}" rel="next">'
+            f'<span class="post-nav-label">Next →</span>'
+            f'<span class="post-nav-title">{html.escape(next_post["title"])}</span></a>'
+        )
 
-    post_navigation += f'<div>{previous_link}</div>'
-    post_navigation += f'<div>{next_link}</div>'
-    post_navigation += f'<div><b>{previous_title}</b></div>'
-    post_navigation += f'<div><b>{next_title}</b></div>'
     post_navigation += '</nav>'
 
-    post_body = convert_markdown_to_html(read_file(post["path"]))
+    language, raw_body = extract_language(read_file(post["path"]))
+    post_body = convert_markdown_to_html(raw_body)
+    escaped_title = html.escape(post["title"])
 
     post_data = {
-        "{title}": post["title"],
+        "{title}": escaped_title,
         "{content}": post_body,
         "{date}": post["date"],
         "{published_date}": published_date or "",
@@ -133,19 +149,21 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     for placeholder, value in post_data.items():
         post_content = post_content.replace(placeholder, value)
 
-    # Generate OG tags for post
+    # Generate meta tags for post
     description = extract_first_paragraph(post_body) or post["title"]
-    og_tags = generate_og_tags(
+    meta_tags = generate_meta_tags(
         title=f"{post['title']} | YOONKIWOONG",
         description=description,
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
-        url=f"https://yoonkiwoong.github.io/{post['url']}"
+        url=f"https://yoonkiwoong.github.io/{post['url']}",
+        page_type="article"
     )
 
     return render_template("common.html", {
-        "title": f"{post['title']} | YOONKIWOONG",
+        "lang": language,
+        "title": f"{escaped_title} | YOONKIWOONG",
         "content": post_content,
-        "og_tags": og_tags,
+        "meta_tags": meta_tags,
         "canonical_url": f"https://yoonkiwoong.github.io/{post['url']}"
     })
 
@@ -197,10 +215,11 @@ def generate_about():
     if not about_file.exists():
         return
 
-    content_html = convert_markdown_to_html(read_file(about_file), add_anchors=False)
+    language, raw_body = extract_language(read_file(about_file))
+    content_html = convert_markdown_to_html(raw_body, add_anchors=False)
     description = extract_first_paragraph(content_html) or "About YOONKIWOONG"
 
-    og_tags = generate_og_tags(
+    meta_tags = generate_meta_tags(
         title="About | YOONKIWOONG",
         description=description,
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
@@ -208,9 +227,10 @@ def generate_about():
     )
 
     page_html = render_template("common.html", {
+        "lang": language,
         "title": "About | YOONKIWOONG",
         "content": content_html,
-        "og_tags": og_tags,
+        "meta_tags": meta_tags,
         "canonical_url": "https://yoonkiwoong.github.io/about/"
     })
 
@@ -275,10 +295,10 @@ def generate_archive(posts):
     for year, group in groupby(posts, key=get_post_year):
         archive_content += f"<h2>{year}</h2><ul>"
         for post in group:
-            archive_content += f'<li><a href="/{post["url"]}">{post["title"]}</a> | <small>{post["published_date"]}</small></li>'
+            archive_content += f'<li><a href="/{post["url"]}">{html.escape(post["title"])}</a> | <small>{post["published_date"]}</small></li>'
         archive_content += "</ul>"
 
-    og_tags = generate_og_tags(
+    meta_tags = generate_meta_tags(
         title="Archive | YOONKIWOONG",
         description="Archive of all posts by YOONKIWOONG",
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
@@ -286,9 +306,10 @@ def generate_archive(posts):
     )
 
     archive_html = render_template("common.html", {
+        "lang": SITE_LANGUAGE,
         "title": "Archive | YOONKIWOONG",
         "content": archive_content,
-        "og_tags": og_tags,
+        "meta_tags": meta_tags,
         "canonical_url": "https://yoonkiwoong.github.io/archive/"
     })
     write_file(PUBLIC_DIRECTORY / "archive" / "index.html", archive_html)
