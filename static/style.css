@@ -70,6 +70,13 @@ ul ul ul {
     list-style-type: square;
 }
 
+/* Nested levels indent half as far as the browser default 40px, so a
+   three-deep list stays inside the reading column instead of marching
+   right. Top-level lists keep the default. */
+:is(ul, ol) :is(ul, ol) {
+    padding-inline-start: 20px;
+}
+
 /* Typography: Links */
 a {
     color: var(--link);
