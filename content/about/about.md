@@ -1,3 +1,5 @@
+<!-- lang: en -->
+
 <div class="profile-container">
     <img src="profile.png" alt="Profile Image" class="profile-image">
 </div>
