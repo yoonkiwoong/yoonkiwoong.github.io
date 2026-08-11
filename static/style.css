@@ -35,7 +35,7 @@
 body {
     background-color: var(--bg);
     color: var(--text);
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-family: 'IBM Plex Sans', 'IBM Plex Sans KR', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
     max-width: 700px;
     margin: 0 auto;
     padding: 20px;
@@ -126,7 +126,7 @@ blockquote {
 code {
     background-color: var(--code-bg);
     padding: 2px 4px;
-    font-family: 'IBM Plex Mono', 'D2Coding', monospace;
+    font-family: 'IBM Plex Mono', 'IBM Plex Sans KR', monospace;
 }
 
 pre {
@@ -147,7 +147,7 @@ pre[class*="language-"] {
     border: 1px solid var(--code-border);
     margin: 15px 0;
     padding: 12px;
-    font-family: 'IBM Plex Mono', 'D2Coding', monospace;
+    font-family: 'IBM Plex Mono', 'IBM Plex Sans KR', monospace;
 }
 
 pre[class*="language-"] code {
