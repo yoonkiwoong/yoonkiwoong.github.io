@@ -215,20 +215,31 @@ pre[class*="language-"] code {
 .post-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
 }
 
-.post-nav>div:is(:nth-child(1), :nth-child(3)) {
+.post-nav a {
+    text-decoration: none;
+}
+
+.post-nav-prev {
+    grid-column: 1;
     text-align: left;
 }
 
-.post-nav>div:is(:nth-child(2), :nth-child(4)) {
+.post-nav-next {
+    grid-column: 2;
     text-align: right;
 }
 
-.post-nav>div:nth-child(3),
-.post-nav>div:nth-child(4) {
+.post-nav-label {
+    text-decoration: underline;
+}
+
+.post-nav-title {
+    display: block;
     margin-top: 4px;
+    font-weight: 700;
+    color: var(--text);
 }
 
 .footer {
