@@ -1,6 +1,19 @@
-/* IBM Plex Sans / Sans KR / Mono — self-hosted subsets (SIL OFL 1.1).
-   Generated from the Google Fonts CSS API; unicode-range splits mean
-   a browser downloads only the slices a page actually needs. */
+/* IBM Plex Sans / Sans KR / Mono — self-hosted subsets (SIL OFL 1.1, see fonts/OFL.txt).
+   Generated from the Google Fonts CSS API, which splits each family by
+   unicode-range so a browser downloads only the slices a page needs.
+
+   To regenerate: request the three URLs below with a desktop browser
+   User-Agent (a bare curl gets ttf, not woff2), download every woff2 they
+   list, and point each src at /static/fonts/<family>-<weight>-<style>-<subset>.woff2.
+   A KR slice's subset number is the .N. in its gstatic filename.
+
+     css2?family=IBM+Plex+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap
+     css2?family=IBM+Plex+Mono:ital,wght@0,400;0,700;1,400&display=swap
+     css2?family=IBM+Plex+Sans+KR:wght@400;700&display=swap
+
+   Faces dropped on purpose: cyrillic, greek and vietnamese from the latin
+   families (never used here), and latin plus latin-ext from Sans KR (the
+   stacks resolve roman glyphs from Plex Sans or Plex Mono first). */
 
 @font-face {
     font-family: 'IBM Plex Sans';
