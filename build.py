@@ -162,7 +162,7 @@ def get_published_date(file_path):
         published_date_iso = published_result.stdout.strip().split('\n')[0]
         published_date = datetime.fromisoformat(published_date_iso).strftime('%Y-%m-%d')
         return published_date
-    except:
+    except (subprocess.CalledProcessError, ValueError):
         return None
 
 
@@ -178,7 +178,7 @@ def get_updated_date(file_path):
         updated_date_iso = updated_result.stdout.strip()
         updated_date = datetime.fromisoformat(updated_date_iso).strftime('%Y-%m-%d')
         return updated_date
-    except:
+    except (subprocess.CalledProcessError, ValueError):
         return None
 
 
@@ -224,7 +224,8 @@ def collect_posts():
     posts = []
     for post_file in POSTS_DIRECTORY.rglob("*.md"):
         post_date = post_file.parent.name
-        published_date = get_published_date(post_file)
+        # Files without git history (new posts before first commit) fall back to the folder-name date
+        published_date = get_published_date(post_file) or post_date
         updated_date = get_updated_date(post_file)
         
         posts.append({
