@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # build.py derives published/updated dates from git log,
+          # which needs the full history (the default shallow clone has only HEAD).
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4

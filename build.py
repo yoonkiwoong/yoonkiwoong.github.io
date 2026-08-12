@@ -135,12 +135,22 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     post_body = convert_markdown_to_html(raw_body)
     escaped_title = html.escape(post["title"])
 
+    # A post that was never edited after publishing has no separate updated date to show
+    updated_meta = ""
+    if updated_date and updated_date != published_date:
+        updated_meta = (
+            '<li>'
+            '<ion-icon name="sync-outline"></ion-icon>'
+            '<span>Updated</span>'
+            f'<time datetime="{updated_date}">{updated_date}</time>'
+            '</li>'
+        )
+
     post_data = {
         "{title}": escaped_title,
         "{content}": post_body,
-        "{date}": post["date"],
         "{published_date}": published_date or "",
-        "{updated_date}": updated_date or "",
+        "{updated_meta}": updated_meta,
         "{post_nav}": post_navigation
     }
 
@@ -168,11 +178,14 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     })
 
 
-# Utility (Git): Get the first commit date of a file (published)
-def get_published_date(file_path):
+# Utility (Git): Get the first commit date of a post directory (published)
+# Scoped to the directory, not the markdown file: git cannot commit an empty directory,
+# so its first commit is when the post first landed. A file-scoped lookup would instead
+# reset the date whenever the post is renamed, because --follow does not survive --reverse.
+def get_published_date(post_directory):
     try:
         published_result = subprocess.run(
-            ['git', 'log', '--follow', '--format=%aI', '--reverse', str(file_path)],
+            ['git', 'log', '--format=%aI', '--reverse', '--', str(post_directory)],
             capture_output=True,
             text=True,
             check=True
@@ -184,11 +197,12 @@ def get_published_date(file_path):
         return None
 
 
-# Utility (Git): Get the last modified date of a file (updated)
-def get_updated_date(file_path):
+# Utility (Git): Get the last commit date of a post directory (updated)
+# Directory-scoped so edits to a post's assets (e.g. replacing an image) also count as updates
+def get_updated_date(post_directory):
     try:
         updated_result = subprocess.run(
-            ['git', 'log', '-1', '--format=%aI', str(file_path)],
+            ['git', 'log', '-1', '--format=%aI', '--', str(post_directory)],
             capture_output=True,
             text=True,
             check=True
@@ -243,10 +257,11 @@ def generate_about():
 def collect_posts():
     posts = []
     for post_file in POSTS_DIRECTORY.rglob("*.md"):
-        post_date = post_file.parent.name
-        # Files without git history (new posts before first commit) fall back to the folder-name date
-        published_date = get_published_date(post_file) or post_date
-        updated_date = get_updated_date(post_file)
+        post_directory = post_file.parent
+        post_date = post_directory.name
+        # Posts without git history (new posts before their first commit) fall back to the folder-name date
+        published_date = get_published_date(post_directory) or post_date
+        updated_date = get_updated_date(post_directory)
         
         posts.append({
             "title": post_file.stem,
