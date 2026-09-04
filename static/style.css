@@ -1,6 +1,9 @@
 /* Themes */
 :root {
     color-scheme: light dark;
+
+    /* systemGray is the one Apple color that holds on both grounds, so it is not paired like the rest */
+    --muted: #8E8E93;
 }
 
 @media (prefers-color-scheme: light) {
