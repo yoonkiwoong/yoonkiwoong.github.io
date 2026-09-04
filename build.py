@@ -18,51 +18,43 @@ SITE_LANGUAGE = "ko"
 LANGUAGE_PATTERN = re.compile(r'<!--\s*lang:\s*(en|ko)\s*-->\s*')
 
 
-# Utility (File System): Clear and recreate a directory
 def initialize_directory(path):
     if path.exists():
         shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
 
 
-# Utility (File System): Write content to a file, creating directories if needed
 def write_file(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding='utf-8')
 
 
-# Utility (File System): Read content from a file
 def read_file(path):
     return path.read_text(encoding='utf-8')
 
 
-# Utility (File System): Copy static files to the public directory
 def copy_static_files():
     if STATIC_DIRECTORY.exists():
         shutil.copytree(STATIC_DIRECTORY, PUBLIC_DIRECTORY / "static")
 
 
-# Utility (File System): Copy image assets from source to target directory
 def copy_assets(source_directory, target_directory):
     for image_file in source_directory.glob("*.[jp][pn]g"):
         shutil.copy(image_file, target_directory)
 
 
-# Utility (Content Processing): Generate a URL-friendly slug from text
-def generate_url_slug(text):
+def make_url_slug(text):
     text = text.lower()
     text = re.sub(r'[^\w\s-]', '', text)
     return re.sub(r'[-\s]+', '-', text).strip('-')
 
 
-# Utility (Content Processing): Add an ID anchor to a heading tag
 def add_anchor_to_heading(match):
     tag, text = match.groups()
-    slug = generate_url_slug(text)
+    slug = make_url_slug(text)
     return f'<{tag} id="{slug}">{text}</{tag}>'
 
 
-# Utility (Content Processing): Convert Markdown text to HTML with optional anchors
 def convert_markdown_to_html(raw_text, add_anchors=True):
     converted_html = markdown.markdown(raw_text, extensions=['fenced_code'])
     if add_anchors:
@@ -70,14 +62,12 @@ def convert_markdown_to_html(raw_text, add_anchors=True):
     return converted_html
 
 
-# Utility (Content Processing): Read the declared language and strip its marker
 def extract_language(raw_text):
     match = LANGUAGE_PATTERN.search(raw_text)
     language = match.group(1) if match else SITE_LANGUAGE
     return language, LANGUAGE_PATTERN.sub('', raw_text, count=1)
 
 
-# Utility (Content Processing): Render a template with context data
 def render_template(template_name, context):
     template = read_file(TEMPLATE_DIRECTORY / template_name)
     for key, value in context.items():
@@ -85,22 +75,18 @@ def render_template(template_name, context):
     return template
 
 
-# Utility (Content Processing): Extract first <p> tag content from HTML
 def extract_first_paragraph(content_html):
     match = re.search(r'<p>(.*?)</p>', content_html, re.DOTALL)
     if match:
-        # Remove HTML tags from paragraph content
         text = re.sub(r'<[^>]+>', '', match.group(1))
         # Decode entities so the result is plain text, escaped again at the output boundary
         text = html.unescape(text)
-        # Replace newlines and multiple spaces with single space
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
     return ""
 
 
-# Utility (Content Processing): Generate description and OG tags HTML
-def generate_meta_tags(title, description, image_url, url, page_type="website"):
+def render_meta_tags(title, description, image_url, url, page_type="website"):
     title = html.escape(title)
     description = html.escape(description)
     return f'''<meta name="description" content="{description}">
@@ -111,7 +97,6 @@ def generate_meta_tags(title, description, image_url, url, page_type="website"):
     <meta property="og:type" content="{page_type}">'''
 
 
-# Utility (Content Processing): Render a post to HTML
 def render_post(post, previous_post=None, next_post=None, published_date=None, updated_date=None):
     post_navigation = '<nav class="post-nav" aria-label="Post navigation">'
 
@@ -159,9 +144,8 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     for placeholder, value in post_data.items():
         post_content = post_content.replace(placeholder, value)
 
-    # Generate meta tags for post
     description = extract_first_paragraph(post_body) or post["title"]
-    meta_tags = generate_meta_tags(
+    meta_tags = render_meta_tags(
         title=f"{post['title']} | YOONKIWOONG",
         description=description,
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
@@ -178,7 +162,6 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     })
 
 
-# Utility (Git): Get the first commit date of a post directory (published)
 # Scoped to the directory, not the markdown file: git cannot commit an empty directory,
 # so its first commit is when the post first landed. A file-scoped lookup would instead
 # reset the date whenever the post is renamed, because --follow does not survive --reverse.
@@ -197,7 +180,6 @@ def get_published_date(post_directory):
         return None
 
 
-# Utility (Git): Get the last commit date of a post directory (updated)
 # Directory-scoped so edits to a post's assets (e.g. replacing an image) also count as updates
 def get_updated_date(post_directory):
     try:
@@ -214,12 +196,10 @@ def get_updated_date(post_directory):
         return None
 
 
-# Utility (Date Helpers): Get the date from a post dictionary
 def get_post_date(post):
     return post["published_date"]
 
 
-# Utility (Date Helpers): Get the year from a post dictionary
 def get_post_year(post):
     return post["published_date"][:4]
 
@@ -233,7 +213,7 @@ def generate_about():
     content_html = convert_markdown_to_html(raw_body, add_anchors=False)
     description = extract_first_paragraph(content_html) or "About YOONKIWOONG"
 
-    meta_tags = generate_meta_tags(
+    meta_tags = render_meta_tags(
         title="About | YOONKIWOONG",
         description=description,
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
@@ -325,7 +305,7 @@ def generate_archive(posts):
             archive_content += f'<li><a href="/{post["url"]}">{html.escape(post["title"])}</a> | <small>{post["published_date"]}</small></li>'
         archive_content += "</ul>"
 
-    meta_tags = generate_meta_tags(
+    meta_tags = render_meta_tags(
         title="Archive | YOONKIWOONG",
         description="Archive of all posts by YOONKIWOONG",
         image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
@@ -346,14 +326,11 @@ def main():
     initialize_directory(PUBLIC_DIRECTORY)
     copy_static_files()
 
-    # 1. Build about page
     generate_about()
 
-    # 2. Build archive page
     posts = collect_posts()
     generate_archive(posts)
 
-    # 3. Build post pages
     generate_posts(posts)
     generate_index(posts)
 
