@@ -256,19 +256,31 @@ def generate_about():
 
 def collect_posts():
     posts = []
+    post_file_by_url = {}
     for post_file in POSTS_DIRECTORY.rglob("*.md"):
         post_directory = post_file.parent
         post_date = post_directory.name
         # Posts without git history (new posts before their first commit) fall back to the folder-name date
         published_date = get_published_date(post_directory) or post_date
         updated_date = get_updated_date(post_directory)
-        
+        post_url = f"post/{post_date}/"
+
+        # The URL carries only the folder name, so two posts in one folder would write the same
+        # index.html and the later one would silently replace the earlier. Stop the build instead.
+        if post_url in post_file_by_url:
+            raise SystemExit(
+                f"Two posts would share /{post_url}: "
+                f"{post_file_by_url[post_url]} and {post_file}. "
+                "Give each post its own dated folder."
+            )
+        post_file_by_url[post_url] = post_file
+
         posts.append({
             "title": post_file.stem,
             "date": post_date,
             "published_date": published_date,
             "updated_date": updated_date,
-            "url": f"post/{post_date}/",
+            "url": post_url,
             "path": post_file
         })
     return sorted(posts, key=get_post_date, reverse=True)
