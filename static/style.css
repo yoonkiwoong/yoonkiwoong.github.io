@@ -42,6 +42,9 @@ body {
     max-width: 700px;
     margin: 0 auto;
     padding: 20px;
+    /* 한글은 음절마다 끊지 않는다. break-word는 띄어쓰기 없이 긴 것이 폭을 넘을 때만 끊는 짝. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 hr {
