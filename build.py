@@ -1,3 +1,4 @@
+import hashlib
 import html
 import re
 import shutil
@@ -12,6 +13,9 @@ POSTS_DIRECTORY = Path("content/posts")
 TEMPLATE_DIRECTORY = Path("templates")
 STATIC_DIRECTORY = Path("static")
 PUBLIC_DIRECTORY = Path("public")
+# The design lives in the plex-paper submodule; the blog copies only the files a page loads
+PLEX_PAPER_DIRECTORY = Path("plex-paper")
+PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "fonts", "diagrams"]
 
 # Language declared per document as `<!-- lang: ko -->`; unmarked documents fall back to SITE_LANGUAGE
 SITE_LANGUAGE = "ko"
@@ -36,6 +40,14 @@ def read_file(path):
 def copy_static_files():
     if STATIC_DIRECTORY.exists():
         shutil.copytree(STATIC_DIRECTORY, PUBLIC_DIRECTORY / "static")
+    for asset in PLEX_PAPER_ASSETS:
+        source = PLEX_PAPER_DIRECTORY / asset
+        target = PUBLIC_DIRECTORY / "static" / "plex-paper" / asset
+        if source.is_dir():
+            shutil.copytree(source, target)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(source, target)
 
 
 def copy_assets(source_directory, target_directory):
@@ -55,8 +67,55 @@ def add_anchor_to_heading(match):
     return f'<{tag} id="{slug}">{text}</{tag}>'
 
 
+# Python-Markdown has no GFM strikethrough; code spans and fences keep their tildes
+STRIKETHROUGH_PATTERN = re.compile(r'~~(?=\S)(.+?)(?<=\S)~~')
+CODE_PATTERN = re.compile(r'(```.*?```|`[^`\n]*`)', re.DOTALL)
+
+
+def convert_strikethrough(raw_text):
+    parts = CODE_PATTERN.split(raw_text)
+    return ''.join(part if part.startswith('`') else STRIKETHROUGH_PATTERN.sub(r'<del>\1</del>', part)
+                   for part in parts)
+
+
+# GFM alerts stay blockquotes and only gain the callout color (DESIGN.md, 문서 요소 4)
+ALERT_CLASSES = {"NOTE": "info", "TIP": "info", "IMPORTANT": "warn", "WARNING": "warn", "CAUTION": "fail"}
+ALERT_PATTERN = re.compile(r'<blockquote>\s*<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*')
+
+
+def convert_alerts(converted_html):
+    return ALERT_PATTERN.sub(
+        lambda match: f'<blockquote class="callout {ALERT_CLASSES[match.group(1)]}">\n<p>', converted_html)
+
+
+# plex-paper.js reads the language from pre[data-lang], not from the code element's class
+CODE_BLOCK_PATTERN = re.compile(r'<pre><code class="language-([\w+-]+)">')
+MERMAID_PATTERN = re.compile(r'<pre data-lang="mermaid"><code>(.*?)</code></pre>', re.DOTALL)
+
+
+# Diagrams are rendered to SVG ahead of time, named by the sha256 of the fence body, so the build
+# needs no Node or browser. A missing or stale SVG leaves the fence as code, which still reads.
+def convert_mermaid(match):
+    source = html.unescape(match.group(1)).strip()
+    name = hashlib.sha256(source.encode()).hexdigest()[:12]
+    light = PLEX_PAPER_DIRECTORY / "diagrams" / f"{name}-light.svg"
+    dark = PLEX_PAPER_DIRECTORY / "diagrams" / f"{name}-dark.svg"
+    if not (light.exists() and dark.exists()):
+        return match.group(0)
+    return (
+        '<picture>'
+        f'<source srcset="/static/plex-paper/diagrams/{dark.name}" media="(prefers-color-scheme: dark)">'
+        f'<img src="/static/plex-paper/diagrams/{light.name}" alt="{html.escape(source)}">'
+        '</picture>'
+    )
+
+
 def convert_markdown_to_html(raw_text, add_anchors=True):
-    converted_html = markdown.markdown(raw_text, extensions=['fenced_code'])
+    converted_html = markdown.markdown(convert_strikethrough(raw_text),
+                                       extensions=['fenced_code', 'tables', 'footnotes'])
+    converted_html = CODE_BLOCK_PATTERN.sub(r'<pre data-lang="\1"><code>', converted_html)
+    converted_html = MERMAID_PATTERN.sub(convert_mermaid, converted_html)
+    converted_html = convert_alerts(converted_html)
     if add_anchors:
         return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, converted_html)
     return converted_html
@@ -125,7 +184,7 @@ def render_post(post, previous_post=None, next_post=None, published_date=None, u
     if updated_date and updated_date != published_date:
         updated_meta = (
             '<li>'
-            '<ion-icon name="sync-outline"></ion-icon>'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>'
             '<span>Updated</span>'
             f'<time datetime="{updated_date}">{updated_date}</time>'
             '</li>'
@@ -234,6 +293,33 @@ def generate_about():
     write_file(output_directory / "index.html", page_html)
 
 
+def generate_plex_paper():
+    elements_file = PLEX_PAPER_DIRECTORY / "ELEMENTS.md"
+    if not elements_file.exists():
+        return
+
+    content_html = convert_markdown_to_html(read_file(elements_file))
+    # The page links to the rules the way the repository does; on the blog that file lives on GitHub
+    content_html = content_html.replace(
+        'href="DESIGN.md"', 'href="https://github.com/yoonkiwoong/plex-paper/blob/main/DESIGN.md"')
+
+    meta_tags = render_meta_tags(
+        title="Plex Paper Elements | YOONKIWOONG",
+        description=extract_first_paragraph(content_html) or "Plex Paper Elements",
+        image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
+        url="https://yoonkiwoong.github.io/plex-paper/"
+    )
+
+    page_html = render_template("common.html", {
+        "lang": SITE_LANGUAGE,
+        "title": "Plex Paper Elements | YOONKIWOONG",
+        "content": content_html,
+        "meta_tags": meta_tags,
+        "canonical_url": "https://yoonkiwoong.github.io/plex-paper/"
+    })
+    write_file(PUBLIC_DIRECTORY / "plex-paper" / "index.html", page_html)
+
+
 def collect_posts():
     posts = []
     post_file_by_url = {}
@@ -327,6 +413,7 @@ def main():
     copy_static_files()
 
     generate_about()
+    generate_plex_paper()
 
     posts = collect_posts()
     generate_archive(posts)

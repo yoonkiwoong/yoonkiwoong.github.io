@@ -12,4 +12,4 @@ content/posts/2025-11-16/Hello, world!.md
 
 The folder name becomes the URL (`/post/2025-11-16/`) and the file name becomes the title, so neither is repeated inside the file. Images placed in the same folder are copied next to the post. The published and updated dates shown on the page come from the folder's git history, not from its name.
 
-Push to `main` and GitHub Actions builds the site and deploys it to GitHub Pages. To build locally, `pip install markdown` and run `python build.py`; the output goes to `public/`.
+Push to `main` and GitHub Actions builds the site and deploys it to GitHub Pages. The design comes from the [plex-paper](https://github.com/yoonkiwoong/plex-paper) submodule, so clone with `--recurse-submodules`. To build locally, `pip install markdown` and run `python build.py`; the output goes to `public/`.
