@@ -14,8 +14,11 @@
 }
 
 
+/* 왼쪽은 블로그 자체, 오른쪽은 이 블로그에서 보여주는 만든 것. 메뉴가 늘어 한 줄을 넘으면 오른쪽이 다음 줄로 내려간다. */
 .site-nav {
     display: flex;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
     justify-content: space-between;
     align-items: center;
 }
