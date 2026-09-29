@@ -116,6 +116,8 @@ def convert_markdown_to_html(raw_text, add_anchors=True):
     converted_html = CODE_BLOCK_PATTERN.sub(r'<pre data-lang="\1"><code>', converted_html)
     converted_html = MERMAID_PATTERN.sub(convert_mermaid, converted_html)
     converted_html = convert_alerts(converted_html)
+    # Markdown tables have no wrapper, so a wide one would push the whole page sideways on a phone
+    converted_html = converted_html.replace('<table>', '<div class="table-scroll"><table>').replace('</table>', '</table></div>')
     if add_anchors:
         return re.sub(r'<(h[23])>(.*?)</\1>', add_anchor_to_heading, converted_html)
     return converted_html
