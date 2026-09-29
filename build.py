@@ -294,11 +294,7 @@ def generate_about():
 
 
 def generate_plex_paper():
-    elements_file = PLEX_PAPER_DIRECTORY / "ELEMENTS.md"
-    if not elements_file.exists():
-        return
-
-    content_html = convert_markdown_to_html(read_file(elements_file))
+    content_html = convert_markdown_to_html(read_file(PLEX_PAPER_DIRECTORY / "ELEMENTS.md"))
     # The page links to the rules the way the repository does; on the blog that file lives on GitHub
     content_html = content_html.replace(
         'href="DESIGN.md"', 'href="https://github.com/yoonkiwoong/plex-paper/blob/main/DESIGN.md"')
