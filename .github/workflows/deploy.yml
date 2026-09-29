@@ -5,6 +5,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+  # plex-paper's notify-blog.yml sends this when its main moves
+  repository_dispatch:
+    types:
+      - plex-paper-updated
 
 permissions:
   contents: read
@@ -16,12 +20,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Moves the submodule pin to plex-paper's latest main and commits it, so every deployed
+  # blog commit names the exact plex-paper commit it was built from. A push made with
+  # GITHUB_TOKEN starts no new run, so the build below picks up that commit in this same run.
+  bump:
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Move the plex-paper pin
+        id: commit
+        run: |
+          set -euo pipefail
+          git submodule update --remote plex-paper
+          if git diff --quiet; then
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          SHORT=$(git -C plex-paper rev-parse --short HEAD)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "plex-paper: pick up ${SHORT}"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: bump
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.bump.outputs.sha || github.sha }}
+          submodules: true
           # build.py derives published/updated dates from git log,
           # which needs the full history (the default shallow clone has only HEAD).
           fetch-depth: 0
@@ -45,6 +85,7 @@ jobs:
           path: './public'
 
   deploy:
+    if: ${{ !failure() && !cancelled() }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -58,14 +99,16 @@ jobs:
   # corest의 version.yml(YYMMDD.NNN, Asia/Seoul)을 단순화한 것. corest는 main 푸시마다
   # 태그하지만 여기서는 deploy 성공 뒤에 태그해서, 태그가 "실제로 배포된 버전"을 뜻한다.
   release:
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: [bump, deploy]
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ needs.bump.outputs.sha || github.sha }}
           # 오늘 날짜의 기존 태그와 직전 태그 이후 커밋 목록을 읽으려면 전체 이력이 필요하다
           fetch-depth: 0
 
