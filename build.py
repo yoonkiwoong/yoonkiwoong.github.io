@@ -111,8 +111,10 @@ def convert_mermaid(match):
 
 
 def convert_markdown_to_html(raw_text, add_anchors=True):
+    # sane_lists: a switch between - and 1. starts a new list, as on GitHub; without it the two merge
+    # and the items at the seam get wrapped in paragraphs, which widens their spacing
     converted_html = markdown.markdown(convert_strikethrough(raw_text),
-                                       extensions=['fenced_code', 'tables', 'footnotes'])
+                                       extensions=['fenced_code', 'tables', 'footnotes', 'sane_lists'])
     converted_html = CODE_BLOCK_PATTERN.sub(r'<pre data-lang="\1"><code>', converted_html)
     converted_html = MERMAID_PATTERN.sub(convert_mermaid, converted_html)
     converted_html = convert_alerts(converted_html)
