@@ -96,8 +96,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # corest의 version.yml(YYMMDD.NNN, Asia/Seoul)을 단순화한 것. corest는 main 푸시마다
-  # 태그하지만 여기서는 deploy 성공 뒤에 태그해서, 태그가 "실제로 배포된 버전"을 뜻한다.
+  # 버전은 YYMMDD.NNN(Asia/Seoul). main 푸시마다가 아니라 deploy 성공 뒤에 태그해서,
+  # 태그가 "실제로 배포된 버전"을 뜻한다.
   release:
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
