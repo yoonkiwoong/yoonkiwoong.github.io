@@ -13,6 +13,22 @@
     border: 2px solid var(--border);
 }
 
+/* 머리는 아래 선까지 화면 위에 붙어 있다. 선이 머리 안에 있어야 함께 붙는다.
+   body의 위 여백 20px을 머리 안으로 옮긴다 — body에 두면 붙은 머리 위 20px 틈으로 본문이 비쳐 지나간다.
+   z-index가 없으면 본문에서 position을 가진 요소(타임라인 점, 코드 언어 라벨)가 머리 위로 그려진다.
+   글의 <article> 안에도 header가 있어서 body > header로 좁힌다. */
+body { padding-top: 0; }
+body > header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-top: 20px;
+    background-color: var(--bg);
+}
+
+/* 링크로 이동한 제목이 붙은 머리 밑에 가려지지 않게, 머리 높이(약 80px)보다 조금 아래에 세운다.
+   plex-paper의 Floating TOC도 이 값으로 현재 절을 판단하고, 목차의 위 끝(90px)과 같은 높이라 제목과 목차가 나란히 선다. */
+html { scroll-padding-top: 90px; }
 
 /* 왼쪽은 블로그 자체, 오른쪽은 이 블로그에서 보여주는 만든 것. 메뉴가 늘어 한 줄을 넘으면 오른쪽이 다음 줄로 내려간다. */
 .site-nav {
