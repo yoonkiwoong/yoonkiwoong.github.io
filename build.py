@@ -15,7 +15,7 @@ STATIC_DIRECTORY = Path("static")
 PUBLIC_DIRECTORY = Path("public")
 # The design lives in the plex-paper submodule; the blog copies only the files a page loads
 PLEX_PAPER_DIRECTORY = Path("plex-paper")
-PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "fonts", "diagrams"]
+PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "artifact.css", "artifact.js", "fonts", "diagrams", "images"]
 
 # Language declared per document as `<!-- lang: ko -->`; unmarked documents fall back to SITE_LANGUAGE
 SITE_LANGUAGE = "ko"
@@ -302,6 +302,8 @@ def generate_plex_paper():
     # The page links to the rules the way the repository does; on the blog that file lives on GitHub
     content_html = content_html.replace(
         'href="DESIGN.md"', 'href="https://github.com/yoonkiwoong/plex-paper/blob/main/DESIGN.md"')
+    # Images are linked relative to the repository, the way GitHub shows them; on the blog they are copied under static
+    content_html = content_html.replace('src="images/', 'src="/static/plex-paper/images/')
 
     meta_tags = render_meta_tags(
         title="Plex Paper Elements | YOONKIWOONG",
@@ -317,6 +319,13 @@ def generate_plex_paper():
         "meta_tags": meta_tags,
         "canonical_url": "https://yoonkiwoong.github.io/plex-paper/"
     })
+    # Only this page loads plex-paper's artifact layer: it shows the artifact elements, so the
+    # floating table of contents has to appear for real. A template slot would leave the
+    # placeholder text in every other page, since render_template replaces only the keys it gets.
+    page_html = page_html.replace(
+        '</head>', '    <link rel="stylesheet" href="/static/plex-paper/artifact.css">\n</head>')
+    page_html = page_html.replace(
+        '</body>', '    <script src="/static/plex-paper/artifact.js"></script>\n</body>')
     write_file(PUBLIC_DIRECTORY / "plex-paper" / "index.html", page_html)
 
 
