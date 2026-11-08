@@ -15,7 +15,7 @@ STATIC_DIRECTORY = Path("static")
 PUBLIC_DIRECTORY = Path("public")
 # The design lives in the plex-paper submodule; the blog copies only the files a page loads
 PLEX_PAPER_DIRECTORY = Path("plex-paper")
-PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "fonts", "diagrams"]
+PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "fonts", "diagrams", "images"]
 
 # Language declared per document as `<!-- lang: ko -->`; unmarked documents fall back to SITE_LANGUAGE
 SITE_LANGUAGE = "ko"
@@ -302,6 +302,8 @@ def generate_plex_paper():
     # The page links to the rules the way the repository does; on the blog that file lives on GitHub
     content_html = content_html.replace(
         'href="DESIGN.md"', 'href="https://github.com/yoonkiwoong/plex-paper/blob/main/DESIGN.md"')
+    # Images are linked relative to the repository, the way GitHub shows them; on the blog they are copied under static
+    content_html = content_html.replace('src="images/', 'src="/static/plex-paper/images/')
 
     meta_tags = render_meta_tags(
         title="Plex Paper Elements | YOONKIWOONG",
