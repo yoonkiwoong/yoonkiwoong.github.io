@@ -1,3 +1,3 @@
-[submodule "plex-paper"]
-	path = plex-paper
-	url = https://github.com/yoonkiwoong/plex-paper.git
+[submodule "design"]
+	path = design
+	url = https://github.com/yoonkiwoong/design.git
