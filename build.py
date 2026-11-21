@@ -13,9 +13,9 @@ POSTS_DIRECTORY = Path("content/posts")
 TEMPLATE_DIRECTORY = Path("templates")
 STATIC_DIRECTORY = Path("static")
 PUBLIC_DIRECTORY = Path("public")
-# The design lives in the plex-paper submodule; the blog copies only the files a page loads
-PLEX_PAPER_DIRECTORY = Path("plex-paper")
-PLEX_PAPER_ASSETS = ["plex-paper.css", "plex-paper.js", "artifact.css", "artifact.js", "fonts", "diagrams", "images"]
+# The design lives in the design submodule; the blog copies only the files a page loads
+DESIGN_DIRECTORY = Path("design")
+DESIGN_ASSETS = ["design.css", "design.js", "fonts", "diagrams"]
 
 # Language declared per document as `<!-- lang: ko -->`; unmarked documents fall back to SITE_LANGUAGE
 SITE_LANGUAGE = "ko"
@@ -40,9 +40,9 @@ def read_file(path):
 def copy_static_files():
     if STATIC_DIRECTORY.exists():
         shutil.copytree(STATIC_DIRECTORY, PUBLIC_DIRECTORY / "static")
-    for asset in PLEX_PAPER_ASSETS:
-        source = PLEX_PAPER_DIRECTORY / asset
-        target = PUBLIC_DIRECTORY / "static" / "plex-paper" / asset
+    for asset in DESIGN_ASSETS:
+        source = DESIGN_DIRECTORY / asset
+        target = PUBLIC_DIRECTORY / "static" / "design" / asset
         if source.is_dir():
             shutil.copytree(source, target)
         else:
@@ -88,7 +88,7 @@ def convert_alerts(converted_html):
         lambda match: f'<blockquote class="callout {ALERT_CLASSES[match.group(1)]}">\n<p>', converted_html)
 
 
-# plex-paper.js reads the language from pre[data-lang], not from the code element's class
+# design.js reads the language from pre[data-lang], not from the code element's class
 CODE_BLOCK_PATTERN = re.compile(r'<pre><code class="language-([\w+-]+)">')
 MERMAID_PATTERN = re.compile(r'<pre data-lang="mermaid"><code>(.*?)</code></pre>', re.DOTALL)
 
@@ -98,14 +98,14 @@ MERMAID_PATTERN = re.compile(r'<pre data-lang="mermaid"><code>(.*?)</code></pre>
 def convert_mermaid(match):
     source = html.unescape(match.group(1)).strip()
     name = hashlib.sha256(source.encode()).hexdigest()[:12]
-    light = PLEX_PAPER_DIRECTORY / "diagrams" / f"{name}-light.svg"
-    dark = PLEX_PAPER_DIRECTORY / "diagrams" / f"{name}-dark.svg"
+    light = DESIGN_DIRECTORY / "diagrams" / f"{name}-light.svg"
+    dark = DESIGN_DIRECTORY / "diagrams" / f"{name}-dark.svg"
     if not (light.exists() and dark.exists()):
         return match.group(0)
     return (
         '<picture>'
-        f'<source srcset="/static/plex-paper/diagrams/{dark.name}" media="(prefers-color-scheme: dark)">'
-        f'<img src="/static/plex-paper/diagrams/{light.name}" alt="{html.escape(source)}">'
+        f'<source srcset="/static/design/diagrams/{dark.name}" media="(prefers-color-scheme: dark)">'
+        f'<img src="/static/design/diagrams/{light.name}" alt="{html.escape(source)}">'
         '</picture>'
     )
 
@@ -297,38 +297,6 @@ def generate_about():
     write_file(output_directory / "index.html", page_html)
 
 
-def generate_plex_paper():
-    content_html = convert_markdown_to_html(read_file(PLEX_PAPER_DIRECTORY / "ELEMENTS.md"))
-    # The page links to the rules the way the repository does; on the blog that file lives on GitHub
-    content_html = content_html.replace(
-        'href="DESIGN.md"', 'href="https://github.com/yoonkiwoong/plex-paper/blob/main/DESIGN.md"')
-    # Images are linked relative to the repository, the way GitHub shows them; on the blog they are copied under static
-    content_html = content_html.replace('src="images/', 'src="/static/plex-paper/images/')
-
-    meta_tags = render_meta_tags(
-        title="Plex Paper Elements | YOONKIWOONG",
-        description=extract_first_paragraph(content_html) or "Plex Paper Elements",
-        image_url="https://yoonkiwoong.github.io/static/og-image.jpg",
-        url="https://yoonkiwoong.github.io/plex-paper/"
-    )
-
-    page_html = render_template("common.html", {
-        "lang": SITE_LANGUAGE,
-        "title": "Plex Paper Elements | YOONKIWOONG",
-        "content": content_html,
-        "meta_tags": meta_tags,
-        "canonical_url": "https://yoonkiwoong.github.io/plex-paper/"
-    })
-    # Only this page loads plex-paper's artifact layer: it shows the artifact elements, so the
-    # floating table of contents has to appear for real. A template slot would leave the
-    # placeholder text in every other page, since render_template replaces only the keys it gets.
-    page_html = page_html.replace(
-        '</head>', '    <link rel="stylesheet" href="/static/plex-paper/artifact.css">\n</head>')
-    page_html = page_html.replace(
-        '</body>', '    <script src="/static/plex-paper/artifact.js"></script>\n</body>')
-    write_file(PUBLIC_DIRECTORY / "plex-paper" / "index.html", page_html)
-
-
 def collect_posts():
     posts = []
     post_file_by_url = {}
@@ -422,7 +390,6 @@ def main():
     copy_static_files()
 
     generate_about()
-    generate_plex_paper()
 
     posts = collect_posts()
     generate_archive(posts)

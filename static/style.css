@@ -1,4 +1,4 @@
-/* 사이트 틀만 둔다. 요소 스타일과 색 토큰은 submodule plex-paper의 plex-paper.css가 진다. */
+/* 사이트 틀만 둔다. 요소 스타일과 색 토큰은 submodule design의 design.css가 진다. */
 
 .profile-container {
     margin-bottom: 2rem;
@@ -26,8 +26,7 @@ body > header {
     background-color: var(--bg);
 }
 
-/* 링크로 이동한 제목이 붙은 머리 밑에 가려지지 않게, 머리 높이(약 80px)보다 조금 아래에 세운다.
-   plex-paper의 Floating TOC도 이 값으로 현재 절을 판단하고, 목차의 위 끝(90px)과 같은 높이라 제목과 목차가 나란히 선다. */
+/* 링크로 이동한 제목이 붙은 머리 밑에 가려지지 않게, 머리 높이(약 80px)보다 조금 아래에 세운다. */
 html { scroll-padding-top: 90px; }
 
 /* 왼쪽은 블로그 자체, 오른쪽은 이 블로그에서 보여주는 만든 것. 메뉴가 늘어 한 줄을 넘으면 오른쪽이 다음 줄로 내려간다. */
